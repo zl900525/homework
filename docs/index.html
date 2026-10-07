@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>國人出國目的地統計</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --passport: #173c35;
+  --passport-2: #22614f;
+  --gold: #c9a54c;
+  --gold-soft: #efe3bf;
+  --paper: #eef1ee;
+  --surface: #ffffff;
+  --ink: #1b2421;
+  --ink-2: #56625d;
+  --muted: #84908b;
+  --line: #dce1dd;
+  --sans: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  --serif: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.6 var(--sans); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- header band ---------- */
+.band { background: var(--passport); color: #f3f1e8; }
+.band-inner { max-width: 1240px; margin: 0 auto; padding: 32px 20px 0; }
+.band h1 { font: 700 30px/1.25 var(--serif); letter-spacing: 0.04em; margin: 0; }
+.band p { margin: 6px 0 0; color: #b9c8c1; font-size: 14px; }
+.band .notice {
+  display: none; margin: 16px 0 0; padding: 8px 12px; border-radius: 6px;
+  background: var(--gold-soft); color: #4d3d10; font-size: 14px;
+}
+.band .notice.on { display: block; }
+
+/* ---------- filter bar ---------- */
+.filters {
+  margin-top: 24px; padding: 16px 0 20px; border-top: 1px solid rgba(255,255,255,0.14);
+  display: grid; grid-template-columns: 1fr 1.4fr 1.6fr auto; gap: 16px 20px; align-items: end;
+}
+.f { min-width: 0; }
+.f > .lab { display: block; font-size: 13px; color: #b9c8c1; margin-bottom: 6px; }
+.ms { position: relative; }
+.ms-btn {
+  width: 100%; text-align: left; font: inherit; font-size: 14px; color: var(--ink);
+  background: #f7f6f0; border: 1px solid transparent; border-radius: 6px; padding: 8px 32px 8px 12px;
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
+}
+.ms-btn::after {
+  content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; margin-top: -6px;
+  border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); transform: rotate(45deg);
+}
+.ms-btn[aria-expanded="true"] { border-color: var(--gold); }
+.ms-panel {
+  position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: max(100%, 280px);
+  background: var(--surface); color: var(--ink); border-radius: 8px; border: 1px solid var(--line);
+  box-shadow: 0 12px 32px rgba(10, 30, 25, 0.22); display: none;
+}
+.ms-panel.open { display: block; }
+.ms-list { max-height: 300px; overflow: auto; padding: 6px; }
+.ms-group { font-size: 12px; color: var(--muted); padding: 8px 8px 2px; }
+.ms-list label { display: flex; gap: 8px; align-items: flex-start; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+.ms-list label:hover { background: var(--paper); }
+.ms-list input { accent-color: var(--passport-2); margin-top: 5px; }
+.ms-foot { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding: 8px 10px; }
+.ms-foot button { font: inherit; font-size: 13px; background: none; border: 0; color: var(--passport-2); cursor: pointer; padding: 2px 4px; }
+
+.yr-read { font-size: 14px; color: #f3f1e8; font-variant-numeric: tabular-nums; }
+.slider { position: relative; height: 28px; margin-top: 2px; }
+.slider .track, .slider .fill { position: absolute; top: 12px; height: 4px; border-radius: 2px; }
+.slider .track { left: 0; right: 0; background: rgba(255,255,255,0.2); }
+.slider .fill { background: var(--gold); }
+.slider input {
+  position: absolute; left: 0; top: 0; width: 100%; height: 28px; margin: 0; background: none;
+  pointer-events: none; -webkit-appearance: none; appearance: none;
+}
+.slider input::-webkit-slider-runnable-track { background: none; height: 28px; }
+.slider input::-moz-range-track { background: none; }
+.slider input::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; margin-top: 5px; border-radius: 50%;
+  background: #f7f6f0; border: 3px solid var(--gold); cursor: grab;
+}
+.slider input::-moz-range-thumb {
+  pointer-events: auto; width: 14px; height: 14px; border-radius: 50%; background: #f7f6f0; border: 3px solid var(--gold); cursor: grab;
+}
+
+.seg { display: inline-flex; border-radius: 6px; padding: 3px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: 14px; border: 0; border-radius: 4px; padding: 5px 12px; cursor: pointer; background: none; white-space: nowrap;
+}
+.band .seg { background: rgba(255,255,255,0.1); }
+.band .seg button { color: #d6e0db; }
+.band .seg button[aria-pressed="true"] { background: var(--gold); color: #2a2309; font-weight: 500; }
+
+/* ---------- cards ---------- */
+main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.card { background: var(--surface); border-radius: 10px; padding: 20px 20px 16px; border-top: 3px solid var(--passport-2); min-width: 0; display: flex; flex-direction: column; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.card h2 { font: 700 18px/1.4 var(--serif); margin: 0; }
+.card .desc { font-size: 13px; color: var(--ink-2); margin: 2px 0 0; }
+.card .seg { background: var(--paper); flex-shrink: 0; }
+.card .seg button { color: var(--ink-2); font-size: 13px; padding: 4px 10px; }
+.card .seg button[aria-pressed="true"] { background: var(--surface); color: var(--passport); font-weight: 500; box-shadow: 0 0 0 1px var(--line); }
+.plot { position: relative; height: 340px; margin-top: 8px; }
+.plot .ec { position: absolute; inset: 0; }
+.plot .empty {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px; text-align: center; padding: 0 24px;
+}
+.plot.is-empty .ec { visibility: hidden; }
+.plot.is-empty .empty { display: flex; }
+.small { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 0; line-height: 1.7; }
+.small b { font-weight: 500; color: var(--ink); }
+
+footer { max-width: 1240px; margin: 0 auto; padding: 16px 20px 40px; font-size: 13px; color: var(--ink-2); }
+footer a { color: var(--passport-2); }
+
+@media (max-width: 960px) {
+  .filters { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .filters { grid-template-columns: minmax(0, 1fr); }
+  .band h1 { font-size: 24px; }
+  .plot { height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="band">
+  <div class="band-inner">
+    <h1>中華民國國民出國目的地統計</h1>
+    <p id="period"></p>
+    <p class="notice" id="notice"></p>
+
+    <div class="filters">
+      <div class="f">
+        <span class="lab" id="lab-region">大洲／區域</span>
+        <div class="ms" id="ms-region"></div>
+      </div>
+      <div class="f">
+        <span class="lab" id="lab-dest">目的地國家／地區</span>
+        <div class="ms" id="ms-dest"></div>
+      </div>
+      <div class="f">
+        <span class="lab">年份區間　<span class="yr-read" id="yr-read"></span></span>
+        <div class="slider">
+          <div class="track"></div><div class="fill" id="yr-fill"></div>
+          <input type="range" id="yr-a" aria-label="起始年份">
+          <input type="range" id="yr-b" aria-label="結束年份">
+        </div>
+      </div>
+      <div class="f">
+        <span class="lab">顯示方式</span>
+        <div class="seg" role="group" aria-label="顯示方式" id="mode">
+          <button type="button" data-v="total" aria-pressed="true">合計</button>
+          <button type="button" data-v="split" aria-pressed="false">分開比較</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section class="card" id="c1">
+    <div class="card-head">
+      <div><h2>歷年出國總人次趨勢</h2><p class="desc" id="c1-desc"></p></div>
+      <div class="seg" role="group" aria-label="圖表類型">
+        <button type="button" data-v="line" aria-pressed="true">折線</button>
+        <button type="button" data-v="bar" aria-pressed="false">長條</button>
+      </div>
+    </div>
+    <div class="plot"><div class="ec"></div><div class="empty"></div></div>
+  </section>
+
+  <section class="card" id="c2">
+    <div class="card-head">
+      <div><h2>各洲／各區出國人次消長</h2><p class="desc" id="c2-desc"></p></div>
+      <div class="seg" role="group" aria-label="圖表類型">
+        <button type="button" data-v="line" aria-pressed="true">折線</button>
+        <button type="button" data-v="bar" aria-pressed="false">長條</button>
+      </div>
+    </div>
+    <div class="plot"><div class="ec"></div><div class="empty"></div></div>
+  </section>
+
+  <section class="card" id="c3">
+    <div class="card-head">
+      <div><h2>出國目的地佔比分佈</h2><p class="desc" id="c3-desc"></p></div>
+      <div class="seg" role="group" aria-label="圖表類型">
+        <button type="button" data-v="pie" aria-pressed="true">圓餅</button>
+        <button type="button" data-v="bar" aria-pressed="false">長條</button>
+      </div>
+    </div>
+    <div class="plot"><div class="ec"></div><div class="empty"></div></div>
+    <p class="small" id="c3-note"></p>
+  </section>
+
+  <section class="card" id="c4">
+    <div class="card-head">
+      <div><h2>熱門目的地出國人次排行</h2><p class="desc" id="c4-desc"></p></div>
+      <div class="seg" role="group" aria-label="圖表類型">
+        <button type="button" data-v="bar" aria-pressed="true">排行</button>
+        <button type="button" data-v="scatter" aria-pressed="false">散佈</button>
+      </div>
+    </div>
+    <div class="plot"><div class="ec"></div><div class="empty"></div></div>
+    <p class="small" id="c4-note"></p>
+  </section>
+</main>
+
+<footer>
+  <p>資料來源：交通部觀光署 歷年中華民國國民出國目的地人次統計表。目的地以出境班機第一站計算，實際到訪人數請以各國官方入境統計為準。</p>
+  <p>原始資料與整理程式：<a href="https://github.com/zl900525/homework" target="_blank" rel="noopener">github.com/zl900525/homework</a></p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  const D = window.OUTBOUND_DATA;
+  const notice = document.getElementById("notice");
+  if (!D) {
+    notice.textContent = "找不到 data.js：請先執行 work/build_data.py 產生資料檔，再重新整理頁面。";
+    notice.classList.add("on");
+    return;
+  }
+  const hasEC = !!window.echarts;
+  if (!hasEC) {
+    notice.textContent = "圖表元件（ECharts）載入失敗，請確認網路連線後重新整理頁面。";
+    notice.classList.add("on");
+  }
+
+  // ---------- constants ----------
+  const N = D.years.length;
+  const PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+  const OVERFLOW = "#a3aca8";
+  const BRAND = "#22614f";
+  const INK2 = "#56625d", MUTED = "#84908b", LINE = "#dce1dd";
+  const isResidual = d => d.name.includes("其他");
+  const yl = i => `${D.yearsRoc[i]}年（${D.years[i]}）`;
+  const fmt = v => v == null || isNaN(v) ? "—" : Math.round(v).toLocaleString("zh-TW");
+  const wan = v => {
+    const a = Math.abs(v);
+    if (a >= 1e8) return +(v / 1e8).toFixed(1) + " 億";
+    if (a >= 1e4) return +(v / 1e4).toFixed(a >= 1e6 ? 0 : 1) + " 萬";
+    return String(v);
+  };
+  const sign = v => (v > 0 ? "+" : "") + fmt(v);
+
+  // ---------- state ----------
+  const S = {
+    regions: [],          // region indices, [] = all
+    dests: [],            // destination indices, [] = all in regions
+    a: 0, b: N - 1,
+    mode: "total",
+    view: { c1: "line", c2: "line", c3: "pie", c4: "bar" }
+  };
+  // stable color slots per entity: color follows the entity, not its rank
+  const slots = new Map();
+  function colorFor(key) {
+    if (!slots.has(key)) {
+      const used = new Set(slots.values());
+      const free = PALETTE.findIndex((_, i) => !used.has(i));
+      slots.set(key, free);
+    }
+    const i = slots.get(key);
+    return i >= 0 ? PALETTE[i] : OVERFLOW;
+  }
+  function releaseColors(liveKeys) {
+    for (const k of [...slots.keys()]) if (!liveKeys.has(k)) slots.delete(k);
+  }
+
+  // ---------- multi-select ----------
+  function multiSelect(host, labelId, opts) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "ms-btn";
+    btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-labelledby", labelId + " " + host.id + "-btn"); btn.id = host.id + "-btn";
+    const panel = document.createElement("div"); panel.className = "ms-panel";
+    const list = document.createElement("div"); list.className = "ms-list";
+    const foot = document.createElement("div"); foot.className = "ms-foot";
+    const clr = document.createElement("button"); clr.type = "button"; clr.textContent = "清除選取（全部）";
+    const done = document.createElement("button"); done.type = "button"; done.textContent = "完成";
+    foot.append(clr, done); panel.append(list, foot); host.append(btn, panel);
+
+    const open = v => { panel.classList.toggle("open", v); btn.setAttribute("aria-expanded", String(v)); };
+    btn.onclick = () => open(!panel.classList.contains("open"));
+    done.onclick = () => { open(false); btn.focus(); };
+    clr.onclick = () => { opts.set([]); refresh(); opts.onChange(); };
+    document.addEventListener("click", e => { if (!host.contains(e.target)) open(false); });
+    host.addEventListener("keydown", e => { if (e.key === "Escape") { open(false); btn.focus(); } });
+
+    function refresh() {
+      const sel = new Set(opts.get());
+      list.replaceChildren();
+      let lastGroup = null;
+      opts.items().forEach(it => {
+        if (it.group != null && it.group !== lastGroup) {
+          const g = document.createElement("div"); g.className = "ms-group"; g.textContent = it.group;
+          list.appendChild(g); lastGroup = it.group;
+        }
+        const lab = document.createElement("label");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = sel.has(it.value);
+        cb.onchange = () => {
+          const cur = opts.get().filter(v => v !== it.value);
+          if (cb.checked) cur.push(it.value);
+          opts.set(cur); updateBtn(); opts.onChange();
+        };
+        const span = document.createElement("span"); span.textContent = it.label;
+        lab.append(cb, span); list.appendChild(lab);
+      });
+      updateBtn();
+    }
+    function updateBtn() {
+      const sel = opts.get();
+      const names = sel.map(v => opts.items().find(i => i.value === v)).filter(Boolean).map(i => i.short);
+      btn.textContent = !names.length ? opts.allText : names.length <= 2 ? names.join("、") : `${names.slice(0, 2).join("、")} 等 ${names.length} 項`;
+    }
+    refresh();
+    return { refresh };
+  }
+
+  const msRegion = multiSelect(document.getElementById("ms-region"), "lab-region", {
+    allText: "全部大洲",
+    items: () => D.regions.map((r, i) => ({ value: i, label: r.name, short: r.name })),
+    get: () => S.regions,
+    set: v => { S.regions = v; },
+    onChange: () => {
+      // drop selected destinations that are outside the selected regions
+      if (S.regions.length) S.dests = S.dests.filter(i => S.regions.includes(D.destinations[i].region));
+      msDest.refresh(); render();
+    }
+  });
+  const msDest = multiSelect(document.getElementById("ms-dest"), "lab-dest", {
+    allText: "全部國家／地區",
+    items: () => D.destinations
+      .map((d, i) => ({ d, i }))
+      .filter(({ d }) => !S.regions.length || S.regions.includes(d.region))
+      .sort((x, y) => x.d.region - y.d.region || (isResidual(x.d) - isResidual(y.d)))
+      .map(({ d, i }) => ({
+        value: i, short: d.name, group: D.regions[d.region].name,
+        label: d.aliases.length ? `${d.name}（別名：${d.aliases.join("、")}）` : d.name
+      })),
+    get: () => S.dests,
+    set: v => { S.dests = v; },
+    onChange: () => render()
+  });
+
+  // ---------- year slider ----------
+  const ya = document.getElementById("yr-a"), yb = document.getElementById("yr-b");
+  [ya, yb].forEach(el => { el.min = 0; el.max = N - 1; el.step = 1; });
+  ya.value = S.a; yb.value = S.b;
+  function syncSlider() {
+    document.getElementById("yr-read").textContent =
+      `${D.yearsRoc[S.a]}–${D.yearsRoc[S.b]} 年（${D.years[S.a]}–${D.years[S.b]}）`;
+    const f = document.getElementById("yr-fill");
+    f.style.left = (S.a / (N - 1) * 100) + "%";
+    f.style.width = ((S.b - S.a) / (N - 1) * 100) + "%";
+    ya.setAttribute("aria-valuetext", yl(S.a)); yb.setAttribute("aria-valuetext", yl(S.b));
+  }
+  let raf = 0;
+  const onSlide = e => {
+    let a = +ya.value, b = +yb.value;
+    if (a > b) { if (e.target === ya) { a = b; ya.value = a; } else { b = a; yb.value = b; } }
+    // keep the thumb that is on top grabbable when both meet at the right end
+    ya.style.zIndex = a >= N - 2 ? 3 : 1;
+    S.a = a; S.b = b; syncSlider();
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(() => render());
+  };
+  ya.addEventListener("input", onSlide); yb.addEventListener("input", onSlide);
+  syncSlider();
+
+  // ---------- segmented controls ----------
+  function seg(group, onPick) {
+    group.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      group.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      onPick(b.dataset.v);
+    }));
+  }
+  seg(document.getElementById("mode"), v => { S.mode = v; render(); });
+
+  // ---------- data selection ----------
+  const range = () => { const r = []; for (let i = S.a; i <= S.b; i++) r.push(i); return r; };
+  function scopeDests() {
+    if (S.dests.length) return S.dests.slice();
+    return D.destinations.map((_, i) => i).filter(i => !S.regions.length || S.regions.includes(D.destinations[i].region));
+  }
+  const sumYear = (ids, y) => ids.reduce((s, i) => s + (D.destinations[i].counts[y] || 0), 0);
+  const cum = i => range().reduce((s, y) => s + (D.destinations[i].counts[y] || 0), 0);
+
+  function timeSeries() {
+    const ids = scopeDests();
+    if (S.mode === "total") return [{ id: "total", name: "合計", ids, color: BRAND }];
+    if (S.dests.length) return S.dests.map(i => ({ id: "d" + i, name: D.destinations[i].name, ids: [i], color: colorFor("d" + i) }));
+    const regs = S.regions.length ? S.regions.slice().sort((x, y) => x - y) : D.regions.map((_, i) => i);
+    return regs.map(r => ({ id: "r" + r, name: D.regions[r].name, ids: ids.filter(i => D.destinations[i].region === r), color: colorFor("r" + r) }));
+  }
+
+  // ---------- charts ----------
+  const cards = {};
+  ["c1", "c2", "c3", "c4"].forEach(id => {
+    const el = document.getElementById(id);
+    cards[id] = {
+      el, plot: el.querySelector(".plot"), empty: el.querySelector(".empty"),
+      chart: hasEC ? echarts.init(el.querySelector(".ec"), null, { renderer: "canvas" }) : null
+    };
+    seg(el.querySelector(".card-head .seg"), v => { S.view[id] = v; render(id); });
+  });
+  if (!hasEC) Object.values(cards).forEach(c => { c.plot.classList.add("is-empty"); c.empty.textContent = "圖表無法顯示（ECharts 未載入）"; });
+
+  const base = {
+    animationDurationUpdate: 650, animationEasingUpdate: "cubicOut",
+    textStyle: { fontFamily: getComputedStyle(document.body).fontFamily, color: INK2 },
+    tooltip: {
+      confine: true, backgroundColor: "#fff", borderColor: LINE, textStyle: { color: "#1b2421", fontSize: 13 },
+      extraCssText: "box-shadow:0 6px 20px rgba(10,30,25,.14);border-radius:8px;"
+    }
+  };
+  const valueAxis = extra => Object.assign({
+    type: "value", splitNumber: narrow() ? 3 : 5, axisLabel: { color: MUTED, formatter: wan, hideOverlap: true }, splitLine: { lineStyle: { color: LINE } }
+  }, extra);
+  const yearAxis = () => ({
+    type: "category", data: range().map(i => String(D.years[i])),
+    axisLine: { lineStyle: { color: "#c3c9c5" } }, axisTick: { show: false }, axisLabel: { color: MUTED }
+  });
+  const legendFor = ss => ss.length > 1 ? { type: "scroll", top: 0, left: 0, icon: "roundRect", itemWidth: 14, itemHeight: 3, textStyle: { color: INK2 } } : { show: false };
+
+  function axisTooltip(fmtVal) {
+    return Object.assign({}, base.tooltip, {
+      trigger: "axis", axisPointer: { type: "line", lineStyle: { color: "#c3c9c5" } },
+      formatter: ps => {
+        const i = S.a + ps[0].dataIndex;
+        const rows = ps.slice().sort((x, y) => (y.value ?? -Infinity) - (x.value ?? -Infinity))
+          .map(p => `<div style="display:flex;justify-content:space-between;gap:16px"><span>${p.marker}${esc(p.seriesName)}</span><b>${fmtVal(p.value)}</b></div>`).join("");
+        return `<div style="color:${INK2};margin-bottom:4px">${yl(i)}</div>${rows}`;
+      }
+    });
+  }
+  const narrow = () => cards.c1.plot.clientWidth < 480;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function setEmpty(c, msg) {
+    c.plot.classList.toggle("is-empty", !!msg);
+    c.empty.textContent = msg || "";
+  }
+  function apply(c, option, morph) {
+    if (morph) c.chart.setOption(option, { notMerge: true });
+    else c.chart.setOption(option, { replaceMerge: ["series", "xAxis", "yAxis"] });
+  }
+  const NO_DATA = "目前的篩選條件沒有出國人次資料，請放寬大洲、目的地或年份區間。";
+
+  // card 1 + 2: time series
+  function renderTime(id, morph) {
+    const c = cards[id], view = S.view[id], ss = timeSeries(), yrs = range();
+    const delta = id === "c2";
+    const series = ss.map(s => {
+      const data = yrs.map(y => {
+        const v = sumYear(s.ids, y);
+        if (!delta) return v;
+        return y > 0 ? v - sumYear(s.ids, y - 1) : null;
+      });
+      return {
+        id: s.id, name: s.name, type: view, data, color: s.color,
+        universalTransition: { enabled: true },
+        smooth: false, showSymbol: yrs.length <= 12, symbolSize: 6, lineStyle: { width: 2 },
+        barMaxWidth: 22, itemStyle: view === "bar" ? { borderRadius: 2 } : undefined,
+        emphasis: { focus: "series" }
+      };
+    });
+    const allZero = series.every(s => s.data.every(v => !v));
+    setEmpty(c, allZero ? NO_DATA : "");
+    if (allZero) return;
+    apply(c, Object.assign({}, base, {
+      grid: { left: 8, right: 16, top: ss.length > 1 ? 36 : 16, bottom: 8, containLabel: true },
+      legend: legendFor(ss),
+      tooltip: axisTooltip(delta ? sign : v => fmt(v) + " 人次"),
+      xAxis: yearAxis(),
+      yAxis: valueAxis(delta ? { axisLabel: { color: MUTED, formatter: v => (v > 0 ? "+" : "") + wan(v) } } : {}),
+      series
+    }), morph);
+  }
+
+  // card 3: share
+  function renderShare(morph) {
+    const c = cards.c3, view = S.view.c3;
+    const ids = scopeDests();
+    const named = ids.filter(i => !isResidual(D.destinations[i])).map(i => ({ i, v: cum(i) })).filter(x => x.v > 0).sort((x, y) => y.v - x.v);
+    const residual = ids.filter(i => isResidual(D.destinations[i])).map(i => ({ i, v: cum(i) })).filter(x => x.v > 0).sort((x, y) => y.v - x.v);
+    const top = named.slice(0, 6), rest = named.slice(6);
+    const items = top.map((x, k) => ({ name: D.destinations[x.i].name, value: x.v, color: PALETTE[k] }));
+    const restSum = rest.reduce((s, x) => s + x.v, 0), resSum = residual.reduce((s, x) => s + x.v, 0);
+    if (restSum) items.push({ name: "其他地區", value: restSum, color: OVERFLOW });
+    if (resSum) items.push({ name: "原資料「其他」類", value: resSum, color: "#cdd3cf" });
+    const total = items.reduce((s, x) => s + x.value, 0);
+
+    const note = document.getElementById("c3-note");
+    note.replaceChildren();
+    const line = (title, list) => {
+      if (!list.length) return;
+      const p = document.createElement("span");
+      const b = document.createElement("b"); b.textContent = title + "：";
+      p.append(b, document.createTextNode(list.map(x => `${D.destinations[x.i].name} ${fmt(x.v)}`).join("、")));
+      note.append(p, document.createElement("br"));
+    };
+    line("其他地區包含", rest);
+    line("原資料「其他」類包含（各洲未細分的目的地，獨立計算）", residual);
+
+    setEmpty(c, total ? "" : NO_DATA);
+    if (!total) return;
+    const data = items.map(x => ({ name: x.name, value: x.value, groupId: x.name, itemStyle: { color: x.color } }));
+    const tip = Object.assign({}, base.tooltip, {
+      trigger: "item",
+      formatter: p => `${p.marker}${esc(p.name)}<br><b>${fmt(p.value)}</b> 人次（${(p.value / total * 100).toFixed(1)}%）`
+    });
+    const series = view === "pie"
+      ? [{ id: "share", type: "pie", radius: narrow() ? ["28%", "52%"] : ["36%", "66%"], center: ["50%", "54%"], data,
+           universalTransition: { enabled: true }, itemStyle: { borderColor: "#fff", borderWidth: 2 },
+           label: { color: INK2, fontSize: narrow() ? 11 : 12, overflow: "none", formatter: p => `${p.name}\n${p.percent.toFixed(1)}%`, lineHeight: 15 },
+           labelLine: { lineStyle: { color: "#c3c9c5" } } }]
+      : [{ id: "share", type: "bar", data, barMaxWidth: 36, universalTransition: { enabled: true },
+           itemStyle: { borderRadius: [3, 3, 0, 0] },
+           label: { show: true, position: "top", color: INK2, fontSize: 11, formatter: p => (p.value / total * 100).toFixed(1) + "%" } }];
+    apply(c, Object.assign({}, base, {
+      tooltip: tip,
+      grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+      xAxis: view === "bar" ? { type: "category", data: items.map(x => x.name), axisTick: { show: false }, axisLabel: { color: INK2, interval: 0, rotate: items.length > 6 ? 30 : 0 }, axisLine: { lineStyle: { color: "#c3c9c5" } } } : undefined,
+      yAxis: view === "bar" ? valueAxis() : undefined,
+      series
+    }), morph);
+  }
+
+  // card 4: ranking / scatter
+  function renderRank(morph) {
+    const c = cards.c4, view = S.view.c4, yrs = range();
+    const rows = scopeDests().filter(i => !isResidual(D.destinations[i]))
+      .map(i => {
+        const d = D.destinations[i], v = cum(i), last = d.counts[S.b] || 0;
+        const first = yrs.find(y => (d.counts[y] || 0) > 0);
+        const n = first == null ? 0 : S.b - first;
+        const g = n > 0 ? (Math.pow(last / d.counts[first], 1 / n) - 1) * 100 : null;
+        return { i, name: d.name, region: D.regions[d.region].name, v, last, g, first };
+      })
+      .filter(r => r.v > 0).sort((x, y) => y.v - x.v).slice(0, 15);
+
+    document.getElementById("c4-desc").textContent = `${D.yearsRoc[S.a]}–${D.yearsRoc[S.b]} 年累計出國人次前 ${rows.length || 15} 名`;
+    setEmpty(c, rows.length ? "" : NO_DATA);
+    if (!rows.length) return;
+
+    if (view === "bar") {
+      const data = rows.map(r => ({ name: r.name, value: r.v, groupId: r.name }));
+      apply(c, Object.assign({}, base, {
+        tooltip: Object.assign({}, base.tooltip, { trigger: "item", formatter: p => {
+          const r = rows[p.dataIndex];
+          return `${esc(r.name)}<span style="color:${MUTED}">（${esc(r.region)}）</span><br>累計 <b>${fmt(r.v)}</b> 人次<br>${D.yearsRoc[S.b]} 年 <b>${fmt(r.last)}</b> 人次`;
+        } }),
+        grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },
+        xAxis: valueAxis(),
+        yAxis: { type: "category", inverse: true, data: rows.map(r => r.name), axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: INK2 } },
+        series: [{ id: "rank", type: "bar", data, color: BRAND, barMaxWidth: 16, itemStyle: { borderRadius: [0, 3, 3, 0] },
+                   universalTransition: { enabled: true },
+                   label: { show: true, position: "right", color: MUTED, fontSize: 11, formatter: p => wan(p.value) } }]
+      }), morph);
+    } else {
+      const pts = rows.filter(r => r.g != null);
+      const maxLast = Math.max(1, ...pts.map(r => r.last));
+      const data = pts.map(r => ({ name: r.name, value: [r.v, +r.g.toFixed(2), r.last], groupId: r.name }));
+      apply(c, Object.assign({}, base, {
+        tooltip: Object.assign({}, base.tooltip, { trigger: "item", formatter: p => {
+          const r = pts[p.dataIndex];
+          return `${esc(r.name)}<span style="color:${MUTED}">（${esc(r.region)}）</span><br>累計 <b>${fmt(r.v)}</b> 人次<br>年均成長率 <b>${r.g.toFixed(1)}%</b>（${D.yearsRoc[r.first]}–${D.yearsRoc[S.b]} 年）<br>${D.yearsRoc[S.b]} 年 <b>${fmt(r.last)}</b> 人次`;
+        } }),
+        grid: { left: 8, right: 24, top: 28, bottom: 28, containLabel: true },
+        xAxis: valueAxis({ name: "累計出國人次", nameLocation: "middle", nameGap: 28, nameTextStyle: { color: MUTED } }),
+        yAxis: { type: "value", name: "年均成長率", nameTextStyle: { color: MUTED, align: "left" },
+                 axisLabel: { color: MUTED, formatter: v => v + "%" }, splitLine: { lineStyle: { color: LINE } } },
+        series: [{ id: "rank", type: "scatter", data, color: BRAND,
+                   symbolSize: v => 8 + Math.sqrt(v[2] / maxLast) * 40,
+                   itemStyle: { opacity: 0.75, borderColor: "#fff", borderWidth: 1.5 },
+                   universalTransition: { enabled: true },
+                   label: { show: true, position: "top", color: INK2, fontSize: 11, formatter: p => p.dataIndex < 6 ? p.name : "" } }]
+      }), morph);
+    }
+  }
+
+  // ---------- render ----------
+  function render(only) {
+    const morph = typeof only === "string";
+    // drop color slots for entities no longer shown, so freed colors get reused
+    if (S.mode === "split") releaseColors(new Set(S.dests.length ? S.dests.map(i => "d" + i)
+      : (S.regions.length ? S.regions : D.regions.map((_, i) => i)).map(r => "r" + r)));
+
+    const scopeText = (() => {
+      if (S.dests.length) return S.dests.length <= 3 ? S.dests.map(i => D.destinations[i].name).join("、") : `${S.dests.length} 個國家／地區`;
+      if (S.regions.length) return S.regions.map(r => D.regions[r].name).join("、");
+      return "全部目的地";
+    })();
+    document.getElementById("period").textContent =
+      `${scopeText}，民國 ${D.yearsRoc[S.a]} 年至 ${D.yearsRoc[S.b]} 年（${D.years[S.a]}–${D.years[S.b]}），單位：人次`;
+    const modeText = S.mode === "total" ? "篩選結果合計" : (S.dests.length ? "依國家／地區分開" : "依大洲分開");
+    document.getElementById("c1-desc").textContent = `每年出國人次，${modeText}`;
+    document.getElementById("c2-desc").textContent = `每年較前一年增減的人次，${modeText}`;
+    document.getElementById("c3-desc").textContent = `${D.yearsRoc[S.a]}–${D.yearsRoc[S.b]} 年累計，前 6 名以外併入「其他地區」`;
+    document.getElementById("c4-note").textContent =
+      "註：排行依所選年份區間的累計出國人次排序，取前 15 名；年均成長率＝（區間最後一年人次 ÷ 區間內第一個有人次的年份）^（1 ÷ 相隔年數）－ 1，泡泡大小為區間最後一年的出國人次。各洲「其他地區」與「其他」是未細分的類別，不列入排行。目的地以出境班機第一站計算。";
+
+    if (!hasEC) return;
+    if (!only || only === "c1") renderTime("c1", morph);
+    if (!only || only === "c2") renderTime("c2", morph);
+    if (!only || only === "c3") renderShare(morph);
+    if (!only || only === "c4") renderRank(morph);
+  }
+
+  render();
+  if (hasEC) {
+    let wasNarrow = narrow();
+    const ro = new ResizeObserver(() => {
+      Object.values(cards).forEach(c => c.chart.resize());
+      if (narrow() !== wasNarrow) { wasNarrow = narrow(); render(); }
+    });
+    Object.values(cards).forEach(c => ro.observe(c.plot));
+  }
+})();
+</script>
+</body>
+</html>
